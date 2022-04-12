@@ -1,0 +1,26 @@
+[{
+        "ProizvodId": 1,
+        "Naziv": "Mars",
+        "Cena": 32.56
+    },
+    {
+        "ProizvodId": 2,
+        "Naziv": "Snikers",
+        "Cena": 129.99
+    },
+    {
+        "ProizvodId": 3,
+        "Naziv": "Kinder",
+        "Cena": 115.78
+    },
+    {
+        "ProizvodId": 4,
+        "Naziv": "Milka",
+        "Cena": 104.00
+    },
+    {
+        "ProizvodId": 5,
+        "Naziv": "Tviks",
+        "Cena": 78.99
+    }
+]

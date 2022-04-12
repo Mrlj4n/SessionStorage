@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potrosacka korpa</title>
+
+    <style>
+        table {
+            width: 500px;
+        }
+        
+        table,
+        td,
+        th {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        
+        td,
+        th {
+            padding: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <form>
+        <label for="Select1">Odaberite proizvod:</label> <br>
+        <select id="Select1" size="4" onchange="PrikaziCenu()">
+        </select>
+        <br><br>
+        <span id="spanCena"></span>
+        <br> <br> Kolicina:&nbsp;
+        <input id="Text1" type="text" value="1"> &nbsp;
+        <input id="Button1" type="button" value="Dodaj u korpu" onclick="Ubaci()" />
+        <br><br>
+        <div id="div1">
+        </div>
+        <br> <br>
+        <span id="spanVrednost">
+        </span>
+
+        <br><br>
+        <input id="Button2" type="button" value="Kupi" onclick="Kupi()">
+    </form>
+
+
+    <script>
+        function Proizvod(ProizvodId, Naziv, Cena) {
+            this.ProizvodId = ProizvodId;
+            this.Naziv = Naziv;
+            this.Cena = Cena;
+        }
+
+        function Stavka(Proizvod, Kolicina) {
+            this.Proizvod = Proizvod;
+            this.Kolicina = Kolicina;
+        }
+
+        var Select1 = document.getElementById("Select1");
+        var korpa; // niz u kome se cuvaju stavke
+        var spanVrednost = document.getElementById("spanVrednost");
+
+        function SacuvajProizvode(callback) {
+            var zahtev = new XMLHttpRequest();
+
+            zahtev.open("GET", "/Podaci/Proizvodi.json", true);
+            zahtev.send();
+
+            zahtev.onreadystatechange = function() {
+                if (zahtev.readyState == 4 && zahtev.status == 200) {
+                    sessionStorage.Proizvodi = zahtev.responseText;
+
+                    callback();
+                }
+            };
+        }
+
+        function PrikaziProizvode() {
+            if (sessionStorage.Proizvodi != null) {
+                var proizvodi = JSON.parse(sessionStorage.Proizvodi);
+
+                var s = "";
+                for (var i = 0; i < proizvodi.length; i++) {
+                    s += `<option value="${proizvodi[i].ProizvodId}">${proizvodi[i].Naziv}</option>`;
+                }
+
+                Select1.innerHTML = s;
+            }
+        }
+
+        function VratiCenu(id) {
+            var proizvodi = JSON.parse(sessionStorage.Proizvodi);
+            for (var i = 0; i < proizvodi.length; i++) {
+                if (proizvodi[i].ProizvodId == id) {
+                    return proizvodi[i].Cena;
+                }
+            }
+        }
+
+        function PrikaziCenu() {
+            var id = Select1.value;
+
+            var spanCena = document.getElementById("spanCena");
+            spanCena.innerHTML = "Cena: " + VratiCenu(id);
+        }
+
+        function VratiIndeks(id) {
+            for (var i = 0; i < korpa.length; i++) {
+                if (korpa[i].Proizvod.ProizvodId == id) {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        function DodajUkorpu(stavka) {
+            var id = stavka.Proizvod.ProizvodId;
+            var indeks = VratiIndeks(id);
+            if (indeks > -1) {
+                var staraKolicina = parseInt(korpa[indeks].Kolicina);
+                korpa[indeks].Kolicina = staraKolicina + parseInt(stavka.Kolicina);
+            } else {
+                korpa.push(stavka);
+            }
+        }
+
+        function VrednostKorpe() {
+            var suma = 0;
+            for (var i = 0; i < korpa.length; i++) {
+                suma += korpa[i].Proizvod.Cena * korpa[i].Kolicina;
+            }
+            return suma;
+        }
+
+        function StampajKorpu() {
+
+            if (korpa.length > 0) {
+                var tabela = "<table>";
+                for (var i = 0; i < korpa.length; i++) {
+                    tabela += `<tr>
+ <td>${korpa[i].Proizvod.Naziv}</td>
+ <td>${korpa[i].Proizvod.Cena}</td>
+ <td>${korpa[i].Kolicina}</td> 
+ <td><input type="button" data-id="${korpa[i].Proizvod.ProizvodId}" 
+value="Promeni" onclick="Promeni(event)"></td>
+ <td><input type="button" data-id="${korpa[i].Proizvod.ProizvodId}" 
+value="Obrisi" onclick="Obrisi(event)"></td>
+ </tr>`;
+                }
+                tabela += "</table>";
+                div1.innerHTML = tabela;
+                spanVrednost.innerHTML = "Vrednost korpe:" + VrednostKorpe();
+
+            }
+        }
+
+        function Ubaci() {
+            var id = Select1.value;
+            var Text1 = document.getElementById("Text1");
+            if (Select1.selectedIndex < 0) {
+                alert("Odaberite proizvod");
+                return;
+            }
+            var kolicina = parseInt(Text1.value);
+            if (isNaN(kolicina) || kolicina == "") {
+                alert("Kolicina mora biti ceo broj");
+                return;
+            }
+            var id = Select1.value;
+            var naziv = Select1.options[Select1.selectedIndex].text;
+            var cena = VratiCenu(id);
+            var proizvod = new Proizvod(id, naziv, cena);
+            var stavka = new Stavka(proizvod, kolicina);
+            DodajUkorpu(stavka);
+            StampajKorpu();
+
+        }
+
+        function Promeni(event) {
+            var id = event.target.getAttribute("data-id");
+            var index = VratiIndeks(id);
+            var tekucaKolicina = korpa[index].Kolicina;
+            var nk = prompt("Nova kolicina?", tekucaKolicina);
+            if (nk == null) {
+                return;
+            }
+
+            var novaKolicina = parseInt(nk);
+
+            if (isNaN(novaKolicina)) {
+                alert("Morate uneti broj");
+                return;
+            }
+
+            korpa[index].Kolicina = parseInt(novaKolicina);
+
+            StampajKorpu();
+        }
+
+        function Obrisi(event) {
+            var id = event.target.getAttribute("data-id");
+            var index = VratiIndeks(id);
+
+            korpa.splice(index, 1);
+            if (korpa.length > 0) {
+                StampajKorpu();
+            } else {
+                div1.innerHTML = "";
+                spanVrednost.innerHTML = "";
+            }
+        }
+
+        function Kupi() {
+            if (korpa.length > 0) {
+                sessionStorage.Korpa = JSON.stringify(korpa);
+                location.href = "/PregledKorpe.html";
+            }
+        }
+
+        document.body.onload = function() {
+
+            if (sessionStorage.Proizvodi == null) {
+                SacuvajProizvode(PrikaziProizvode);
+            } else {
+                PrikaziProizvode();
+            }
+            if (sessionStorage.Korpa != null) {
+                korpa = JSON.parse(sessionStorage.Korpa);
+                StampajKorpu();
+            } else {
+                korpa = new Array();
+            }
+        }
+    </script>
+</body>
+
+</html>

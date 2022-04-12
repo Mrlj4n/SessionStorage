@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title></title>
+    <meta charset="utf-8" />
+    <style>
+        table {
+            width: 500px;
+        }
+        
+        table,
+        td,
+        th {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        
+        td,
+        th {
+            padding: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Trenutni sadrzaj vase korpe je:</h2>
+    <div id="div1"></div>
+    <br />
+    <span id="spanVrednost"></span>
+    <br />
+    <a href="/Korpa.html">Promeni korpu</a>
+    <script>
+        var korpa = null;
+        document.body.onload = function() {
+            if (sessionStorage.Korpa != null) {
+                korpa = JSON.parse(sessionStorage.Korpa);
+                StampajKorpu();
+            }
+        };
+
+        function StampajKorpu() {
+            if (korpa.length > 0) {
+                var tabela = "<table>";
+                for (var i = 0; i < korpa.length; i++) {
+                    tabela += `<tr>
+ <td>${korpa[i].Proizvod.Naziv}</td>
+ <td>${korpa[i].Proizvod.Cena}</td>
+ <td>${korpa[i].Kolicina}</td>
+ </tr>`;
+                }
+                tabela += "</table>";
+                div1.innerHTML = tabela;
+                spanVrednost.innerHTML = "Vrednost korpe:" + VrednostKorpe();
+            }
+        }
+
+        function VrednostKorpe() {
+            var suma = 0;
+            for (var i = 0; i < korpa.length; i++) {
+                suma += korpa[i].Proizvod.Cena * korpa[i].Kolicina;
+            }
+            return suma;
+        }
+    </script>
+</body>
+
+</html>
